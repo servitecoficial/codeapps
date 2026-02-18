@@ -11,6 +11,7 @@
 
 <h2 class="mb-3">SERVITEC – ADMIN</h2>
 
+<input id="room" class="form-control mb-2" placeholder="Sala (ej: servitec1)">
 <input id="client" class="form-control mb-2" placeholder="Nombre del cliente">
 <input id="code" class="form-control mb-2" placeholder="Código que quieras">
 
@@ -23,13 +24,38 @@
   <option value="files/blokada4-final.apk">Blokada</option>
 </select>
 
-<button class="btn btn-success w-100" onclick="saveConfig()">
-  GUARDAR CONFIGURACIÓN
+<button class="btn btn-success w-100 mb-2" onclick="startHost()">INICIAR HOST</button>
+<button class="btn btn-info w-100" onclick="sendConfig()" disabled id="sendBtn">
+ENVIAR CONFIGURACIÓN
 </button>
 
-<script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-function saveConfig(){
+<script>
+let peer;
+let conn;
+
+function startHost(){
+  const room = document.getElementById("room").value.trim();
+  if(!room){
+    alert("Ingresá una sala");
+    return;
+  }
+
+  peer = new Peer(room);
+
+  peer.on("open", id => {
+    alert("Host activo: " + id);
+  });
+
+  peer.on("connection", connection => {
+    conn = connection;
+    document.getElementById("sendBtn").disabled = false;
+    alert("Cliente conectado");
+  });
+}
+
+function sendConfig(){
 
   const client = document.getElementById("client").value.trim();
   const code = document.getElementById("code").value.trim();
@@ -41,18 +67,16 @@ function saveConfig(){
     return;
   }
 
-  const config = {
+  conn.send({
+    type: "config",
     clientName: client,
     code: code,
     filePath: filePath,
     fileName: fileName
-  };
+  });
 
-  localStorage.setItem("servitecConfig", JSON.stringify(config));
-
-  alert("Configuración guardada correctamente");
+  alert("Configuración enviada al cliente");
 }
-
 </script>
 
 </body>

@@ -12,38 +12,60 @@
 <div class="text-center" style="width:420px">
 
   <h1 class="text-info mb-2">SERVITEC</h1>
-  <h1 class="text-info mb-2">Escribir el codigo que le dieron.</h1>
+  <h5 class="mb-3">Escribir el código que le dieron</h5>
+
+  <input id="room" class="form-control mb-2" placeholder="Sala (ej: servitec1)">
+  <button class="btn btn-info w-100 mb-3" onclick="connect()">CONECTAR</button>
+
   <div id="clientName" class="mb-3 fs-5"></div>
 
   <input id="codeInput" class="form-control mb-3" placeholder="Ingrese código">
-
-  <button class="btn btn-info w-100 mb-3" onclick="connect()">
-    CONECTAR
-  </button>
 
   <div id="result"></div>
 
 </div>
 
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
 <script>
-
-const config = JSON.parse(localStorage.getItem("servitecConfig"));
-
-if(config){
-  document.getElementById("clientName").innerText =
-    "Cliente: " + config.clientName;
-}else{
-  document.getElementById("clientName").innerText =
-    "No hay configuración activa";
-}
+let peer;
+let conn;
+let config = null;
 
 function connect(){
 
-  const inputCode = document.getElementById("codeInput").value.trim();
+  const room = document.getElementById("room").value.trim();
+  if(!room){
+    alert("Ingresá la sala");
+    return;
+  }
+
+  peer = new Peer();
+
+  peer.on("open", id => {
+    conn = peer.connect(room);
+
+    conn.on("open", () => {
+      alert("Conectado al servidor");
+    });
+
+    conn.on("data", data => {
+      if(data.type === "config"){
+        config = data;
+        document.getElementById("clientName").innerText =
+          "Cliente: " + config.clientName;
+      }
+    });
+  });
+}
+
+document.getElementById("codeInput").addEventListener("input", function(){
+
+  const inputCode = this.value.trim();
   const result = document.getElementById("result");
 
   if(!config){
-    result.innerHTML = "<p style='color:red'>No hay archivo configurado</p>";
+    result.innerHTML = "<p style='color:red'>Esperando configuración...</p>";
     return;
   }
 
@@ -54,13 +76,11 @@ function connect(){
 
   result.innerHTML = `
     <a href="${config.filePath}"
-       class="btn btn-success btn-lg w-100"
-       download>
+       class="btn btn-success btn-lg w-100">
        Descargar ${config.fileName}
     </a>
   `;
-}
-
+});
 </script>
 
 </body>
